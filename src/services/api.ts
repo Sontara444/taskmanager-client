@@ -11,7 +11,7 @@ interface AxiosLikeResponse<T> {
     statusText: string;
 }
 
-const request = async <T>(endpoint: string, options: FetchOptions = {}): Promise<AxiosLikeResponse<T>> => {
+const request = async <T = any>(endpoint: string, options: FetchOptions = {}): Promise<AxiosLikeResponse<T>> => {
     const { data, params, ...customConfig } = options;
     const headers = {
         'Content-Type': 'application/json',
@@ -69,10 +69,10 @@ const request = async <T>(endpoint: string, options: FetchOptions = {}): Promise
 };
 
 const api = {
-    get: <T>(url: string, config?: FetchOptions) => request<T>(url, { ...config, method: 'GET' }),
-    post: <T>(url: string, data?: any, config?: FetchOptions) => request<T>(url, { ...config, method: 'POST', data }),
-    put: <T>(url: string, data?: any, config?: FetchOptions) => request<T>(url, { ...config, method: 'PUT', data }),
-    delete: <T>(url: string, config?: FetchOptions) => request<T>(url, { ...config, method: 'DELETE' }),
+    get: <T = any>(url: string, config?: FetchOptions) => request<T>(url, { ...config, method: 'GET' }),
+    post: <T = any>(url: string, data?: any, config?: FetchOptions) => request<T>(url, { ...config, method: 'POST', data }),
+    put: <T = any>(url: string, data?: any, config?: FetchOptions) => request<T>(url, { ...config, method: 'PUT', data }),
+    delete: <T = any>(url: string, config?: FetchOptions) => request<T>(url, { ...config, method: 'DELETE' }),
 };
 
 export default api;
