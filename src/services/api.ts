@@ -30,6 +30,12 @@ const request = async <T = any>(endpoint: string, options: FetchOptions = {}): P
         credentials: 'include', // Same as withCredentials: true
     };
 
+    // Add token to headers if it exists
+    const token = localStorage.getItem('token');
+    if (token) {
+        (config.headers as any)['Authorization'] = `Bearer ${token}`;
+    }
+
     if (data) {
         config.body = JSON.stringify(data);
     }

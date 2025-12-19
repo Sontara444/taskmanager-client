@@ -20,17 +20,24 @@ export interface User {
 }
 
 export const login = async (data: LoginData): Promise<User> => {
-    const response = await api.post('/auth/login', data);
+    const response = await api.post<any>('/auth/login', data);
+    if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+    }
     return response.data;
 };
 
 export const register = async (data: RegisterData): Promise<User> => {
-    const response = await api.post('/auth/register', data);
+    const response = await api.post<any>('/auth/register', data);
+    if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+    }
     return response.data;
 };
 
 export const logout = async (): Promise<void> => {
     await api.post('/auth/logout');
+    localStorage.removeItem('token');
 };
 
 export const updateProfile = async (data: Partial<User>): Promise<User> => {
