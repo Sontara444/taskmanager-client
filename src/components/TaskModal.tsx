@@ -1,122 +1,154 @@
-
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { CreateTaskData, Task } from '../types/task';
-import { useUsers } from '../hooks/useUsers';
+import type { CreateTaskData, UpdateTaskData, Task } from '../types/task';
+import { X } from 'lucide-react';
 
 interface TaskModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: CreateTaskData | any) => void; // any for update partials
-    task?: Task; // If provided, editing
+    onSubmit: (data: CreateTaskData | UpdateTaskData) => Promise<void>;
+    taskToEdit?: Task;
 }
 
-const schema = z.object({
-    title: z.string().min(1, 'Title is required').max(100),
-    description: z.string().min(1, 'Description is required'),
-    dueDate: z.string().min(1, 'Due date is required'), // Input type date returns string
-    priority: z.enum(['Low', 'Medium', 'High', 'Urgent']),
+const formSchema = z.object({
+    title: z.string().min(1, 'Title is required'),
+    description: z.string().optional(),
     status: z.enum(['To Do', 'In Progress', 'Review', 'Completed']).optional(),
+    priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).optional(),
+    dueDate: z.string().optional(),
     assignedToId: z.string().optional(),
 });
 
-type TaskForm = z.infer<typeof schema>;
+type TaskFormData = z.infer<typeof formSchema>;
 
-const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, task }) => {
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<TaskForm>({
-        resolver: zodResolver(schema),
+const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, taskToEdit }) => {
+    const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<TaskFormData>({
+        resolver: zodResolver(formSchema),
         defaultValues: {
-            priority: 'Medium',
             status: 'To Do',
+            priority: 'Medium',
         }
     });
 
-    const { data: users } = useUsers();
-
-    useEffect(() => {
-        if (task) {
-            reset({
-                title: task.title,
-                description: task.description,
-                dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
-                priority: task.priority,
-                status: task.status,
-                assignedToId: task.assignedToId?._id || '',
-            });
+    React.useEffect(() => {
+        if (taskToEdit) {
+            setValue('title', taskToEdit.title);
+            setValue('description', taskToEdit.description || '');
+            setValue('status', taskToEdit.status);
+            setValue('priority', taskToEdit.priority);
+            setValue('dueDate', taskToEdit.dueDate ? new Date(taskToEdit.dueDate).toISOString().split('T')[0] : '');
+            setValue('assignedToId', taskToEdit.assignedToId?._id || '');
         } else {
             reset({
                 title: '',
                 description: '',
-                dueDate: '',
-                priority: 'Medium',
                 status: 'To Do',
-                assignedToId: '',
+                priority: 'Medium',
+                dueDate: '',
+                assignedToId: ''
             });
         }
-    }, [task, reset, isOpen]);
+    }, [taskToEdit, setValue, reset, isOpen]);
+
+    const handleFormSubmit = async (data: TaskFormData) => {
+        // Ensure enums are treated as the correct type
+        const payload: any = { ...data };
+        await onSubmit(payload);
+        onClose();
+    };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4">{task ? 'Edit Task' : 'Create Task'}</h2>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium">Title</label>
-                        <input {...register('title')} className="w-full border p-2 rounded" />
-                        {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-[#12141c] rounded-2xl w-full max-w-lg border border-[#2d303e] shadow-2xl overflow-hidden">
+                <div className="flex justify-between items-center p-6 border-b border-[#2d303e]">
+                    <h2 className="text-xl font-bold text-white">
+                        {taskToEdit ? 'Edit Task' : 'New Task'}
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-white transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Title</label>
+                        <input
+                            {...register('title')}
+                            className="w-full bg-[#0a0b14] border border-[#2d303e] text-white px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-transparent placeholder-gray-600"
+                            placeholder="Task title"
+                        />
+                        {errors.title && <p className="text-red-500 text-xs">{errors.title.message}</p>}
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium">Description</label>
-                        <textarea {...register('description')} className="w-full border p-2 rounded" rows={3} />
-                        {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Description</label>
+                        <textarea
+                            {...register('description')}
+                            rows={3}
+                            className="w-full bg-[#0a0b14] border border-[#2d303e] text-white px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-transparent placeholder-gray-600 resize-none"
+                            placeholder="Add a description..."
+                        />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium">Due Date</label>
-                        <input type="date" {...register('dueDate')} className="w-full border p-2 rounded" />
-                        {errors.dueDate && <p className="text-red-500 text-sm">{errors.dueDate.message}</p>}
-                    </div>
-
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium">Priority</label>
-                            <select {...register('priority')} className="w-full border p-2 rounded">
-                                {['Low', 'Medium', 'High', 'Urgent'].map(p => (
-                                    <option key={p} value={p}>{p}</option>
-                                ))}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300">Status</label>
+                            <select
+                                {...register('status')}
+                                className="w-full bg-[#0a0b14] border border-[#2d303e] text-white px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6366f1] appearance-none"
+                            >
+                                <option value="To Do">To Do</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Review">Review</option>
+                                <option value="Completed">Completed</option>
                             </select>
                         </div>
 
-                        {task && (
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium">Status</label>
-                                <select {...register('status')} className="w-full border p-2 rounded">
-                                    {['To Do', 'In Progress', 'Review', 'Completed'].map(s => (
-                                        <option key={s} value={s}>{s}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300">Priority</label>
+                            <select
+                                {...register('priority')}
+                                className="w-full bg-[#0a0b14] border border-[#2d303e] text-white px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6366f1] appearance-none"
+                            >
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium">Assign To</label>
-                        <select {...register('assignedToId')} className="w-full border p-2 rounded">
-                            <option value="">Unassigned</option>
-                            {users?.map(user => (
-                                <option key={user._id} value={user._id}>{user.name} ({user.email})</option>
-                            ))}
-                        </select>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Due Date</label>
+                        <input
+                            type="date"
+                            {...register('dueDate')}
+                            className="w-full bg-[#0a0b14] border border-[#2d303e] text-white px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6366f1]"
+                        />
                     </div>
 
-                    <div className="flex justify-end space-x-2 mt-6">
-                        <button type="button" onClick={onClose} className="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
-                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+                    <div className="flex gap-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-4 py-2.5 rounded-lg border border-[#2d303e] text-gray-300 hover:text-white hover:bg-[#2d303e] transition-colors font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex-1 px-4 py-2.5 rounded-lg bg-[#6366f1] hover:bg-[#4f46e5] text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {taskToEdit ? 'Save Changes' : 'Create Task'}
+                        </button>
                     </div>
                 </form>
             </div>

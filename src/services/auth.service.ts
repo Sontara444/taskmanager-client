@@ -32,3 +32,8 @@ export const register = async (data: RegisterData): Promise<User> => {
 export const logout = async (): Promise<void> => {
     await api.post('/auth/logout');
 };
+
+export const updateProfile = async (data: Partial<User>): Promise<User> => {
+    const response = await api.put<User>('/auth/profile', data);
+    return response.data;
+};

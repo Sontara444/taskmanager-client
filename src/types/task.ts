@@ -25,6 +25,7 @@ export interface CreateTaskData {
     description: string;
     dueDate: Date | string;
     priority: TaskPriority;
+    status?: TaskStatus;
     assignedToId?: string;
 }
 
@@ -40,8 +41,10 @@ export interface UpdateTaskData {
 export interface TaskFilters {
     status?: TaskStatus;
     priority?: TaskPriority;
-    sortBy?: 'dueDate';
+    sortBy?: 'dueDate' | 'priority' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
     assignedToMe?: boolean;
     createdByMe?: boolean;
+    search?: string;
     overdue?: boolean;
 }
