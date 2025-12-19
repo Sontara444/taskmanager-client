@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { CreateTaskData, UpdateTaskData, Task } from '../types/task';
 import { X } from 'lucide-react';
+import { getUsers, type User } from '../services/user.service';
 
 interface TaskModalProps {
     isOpen: boolean;
@@ -24,6 +25,8 @@ const formSchema = z.object({
 type TaskFormData = z.infer<typeof formSchema>;
 
 const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, taskToEdit }) => {
+    const [users, setUsers] = React.useState<User[]>([]);
+
     const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<TaskFormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -31,6 +34,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, taskTo
             priority: 'Medium',
         }
     });
+
+    React.useEffect(() => {
+        getUsers().then(setUsers).catch(console.error);
+    }, []);
 
     React.useEffect(() => {
         if (taskToEdit) {
@@ -95,6 +102,22 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, taskTo
                             className="w-full bg-[#0a0b14] border border-[#2d303e] text-white px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-transparent placeholder-gray-600 resize-none"
                             placeholder="Add a description..."
                         />
+                    </div>
+
+                    {/* Assign To */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Assign To</label>
+                        <select
+                            {...register('assignedToId')}
+                            className="w-full bg-[#0a0b14] border border-[#2d303e] text-white px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6366f1] appearance-none"
+                        >
+                            <option value="">Unassigned</option>
+                            {users.map(user => (
+                                <option key={user._id} value={user._id}>
+                                    {user.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

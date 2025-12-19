@@ -9,7 +9,8 @@ import FilterBar from '../components/TaskFilters';
 import TaskStats from '../components/TaskStats';
 import socket from '../services/socket';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, Bell, Layout, User, Settings, LogOut } from 'lucide-react';
+import { Plus, Bell, Layout, User, Settings, LogOut, Check } from 'lucide-react';
+import { getNotifications, markAsRead, markAllAsRead, type Notification } from '../services/notification.service';
 
 const Dashboard = () => {
     const { user, logoutUser } = useAuth();
@@ -22,16 +23,22 @@ const Dashboard = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const profileRef = useRef<HTMLDivElement>(null);
+    const notificationRef = useRef<HTMLDivElement>(null);
 
-    // Close profile dropdown when clicking outside
+    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
+            }
+            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+                setIsNotificationOpen(false);
             }
         };
 
@@ -43,27 +50,50 @@ const Dashboard = () => {
 
     const queryClient = useQueryClient();
 
+    // Fetch Notifications
+    const fetchNotifications = async () => {
+        try {
+            const data = await getNotifications();
+            setNotifications(data);
+        } catch (err) {
+            console.error('Failed to fetch notifications', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
+
     // Socket Connection & Listeners
     useEffect(() => {
         socket.connect();
+        if (user) {
+            socket.emit('join', user._id);
+        }
 
         const handleUpdate = () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        };
+
+        const handleNotification = () => {
+            fetchNotifications();
         };
 
         socket.on('task_created', handleUpdate);
         socket.on('task_updated', handleUpdate);
         socket.on('task_deleted', handleUpdate);
         socket.on('task_assigned', handleUpdate);
+        socket.on('notification', handleNotification);
 
         return () => {
             socket.off('task_created', handleUpdate);
             socket.off('task_updated', handleUpdate);
             socket.off('task_deleted', handleUpdate);
             socket.off('task_assigned', handleUpdate);
+            socket.off('notification', handleNotification);
             socket.disconnect();
         };
-    }, [queryClient]);
+    }, [queryClient, user]);
 
     const handleCreate = async (data: any) => {
         await createTaskMutation.mutateAsync(data);
@@ -94,6 +124,26 @@ const Dashboard = () => {
         }
     };
 
+    const handleMarkAsRead = async (id: string) => {
+        try {
+            await markAsRead(id);
+            setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            await markAllAsRead();
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
     return (
         <div className="min-h-screen bg-[#0a0b14] text-white font-sans">
             {/* Header */}
@@ -116,10 +166,77 @@ const Dashboard = () => {
                         </button>
 
                         <div className="flex items-center gap-4 border-l border-[#2d303e] pl-6">
-                            <button className="relative text-gray-400 hover:text-white transition-colors">
-                                <Bell className="w-5 h-5" />
-                                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                            </button>
+                            {/* Notifications */}
+                            <div className="relative" ref={notificationRef}>
+                                <button
+                                    onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                                    className="relative text-gray-400 hover:text-white transition-colors focus:outline-none"
+                                >
+                                    <Bell className="w-5 h-5" />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-[#0a0b14]">
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {isNotificationOpen && (
+                                    <div className="absolute right-0 mt-3 w-80 bg-[#12141c] border border-[#2d303e] rounded-xl shadow-2xl z-50 overflow-hidden">
+                                        <div className="px-4 py-3 border-b border-[#2d303e] flex justify-between items-center">
+                                            <h3 className="text-sm font-semibold text-white">Notifications</h3>
+                                            {unreadCount > 0 && (
+                                                <button onClick={handleMarkAllRead} className="text-xs text-[#6366f1] hover:text-[#4f46e5] font-medium">
+                                                    Mark all read
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="max-h-80 overflow-y-auto">
+                                            {notifications.length === 0 ? (
+                                                <div className="p-4 text-center text-gray-500 text-sm">No notifications</div>
+                                            ) : (
+                                                notifications.map(notification => (
+                                                    <div
+                                                        key={notification._id}
+                                                        className={`p-4 border-b border-[#2d303e] last:border-0 hover:bg-[#1a1d2d] transition-colors ${!notification.isRead ? 'bg-[#1a1d2d]/50' : ''}`}
+                                                    >
+                                                        <div className="flex gap-3">
+                                                            <div className="bg-[#6366f1]/20 p-2 rounded-full h-fit">
+                                                                <Bell className="w-3 h-3 text-[#6366f1]" />
+                                                            </div>
+                                                            <div className="flex-1 space-y-1">
+                                                                <div className="flex justify-between items-start gap-2">
+                                                                    <p className="text-sm text-gray-200 leading-relaxed">{notification.message}</p>
+                                                                    {!notification.isRead && (
+                                                                        <span className="shrink-0 px-1.5 py-0.5 bg-[#6366f1]/20 text-[#6366f1] text-[10px] font-semibold rounded border border-[#6366f1]/20">
+                                                                            NEW
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex justify-between items-center pt-1">
+                                                                    <span className="text-xs text-gray-500">{new Date(notification.createdAt).toLocaleDateString()}</span>
+                                                                    {!notification.isRead && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleMarkAsRead(notification._id);
+                                                                            }}
+                                                                            className="text-[#6366f1] hover:text-[#4f46e5] opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                            title="Mark as read"
+                                                                        >
+                                                                            <Check className="w-3 h-3" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="relative" ref={profileRef}>
                                 <button
