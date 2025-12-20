@@ -1,4 +1,6 @@
-const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}`;
+const rawUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const baseUrl = rawUrl.replace(/\/$/, ''); // Remove trailing slash if present
+const BASE_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
 interface FetchOptions extends RequestInit {
     data?: any;
