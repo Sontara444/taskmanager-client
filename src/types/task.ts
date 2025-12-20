@@ -11,7 +11,7 @@ export interface Task {
     _id: string;
     title: string;
     description: string;
-    dueDate: string; // ISO Date string
+    dueDate: string;
     priority: TaskPriority;
     status: TaskStatus;
     creatorId: User;

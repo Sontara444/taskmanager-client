@@ -44,9 +44,7 @@ const FilterComponents: React.FC<TaskFiltersProps> = ({ filters, setFilters }) =
                 </button>
             </div>
 
-            {/* Bottom Controls */}
             <div className="flex flex-col md:flex-row gap-4 justify-between">
-                {/* Search */}
                 <div className="relative flex-1 max-w-md">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-gray-500" />
@@ -60,7 +58,6 @@ const FilterComponents: React.FC<TaskFiltersProps> = ({ filters, setFilters }) =
                     />
                 </div>
 
-                {/* Dropdowns */}
                 <div className="flex flex-wrap gap-3">
                     <select
                         value={filters.status || ''}
@@ -86,7 +83,6 @@ const FilterComponents: React.FC<TaskFiltersProps> = ({ filters, setFilters }) =
                         <option value="Urgent">Urgent</option>
                     </select>
 
-                    {/* Sort Dropdown & Toggle */}
                     <div className="flex items-center gap-2">
                         <select
                             value={filters.sortBy || ''}

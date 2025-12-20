@@ -31,7 +31,6 @@ const Dashboard = () => {
     const profileRef = useRef<HTMLDivElement>(null);
     const notificationRef = useRef<HTMLDivElement>(null);
 
-    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -50,7 +49,6 @@ const Dashboard = () => {
 
     const queryClient = useQueryClient();
 
-    // Fetch Notifications
     const fetchNotifications = async () => {
         try {
             const data = await getNotifications();
@@ -64,7 +62,6 @@ const Dashboard = () => {
         fetchNotifications();
     }, []);
 
-    // Socket Connection & Listeners
     useEffect(() => {
         socket.connect();
         if (user) {
@@ -146,7 +143,6 @@ const Dashboard = () => {
 
     return (
         <div className="min-h-screen bg-[#0a0b14] text-white font-sans">
-            {/* Header */}
             <header className="border-b border-[#2d303e] bg-[#0a0b14]/50 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
                     <div className="flex items-center gap-3">
@@ -166,7 +162,6 @@ const Dashboard = () => {
                         </button>
 
                         <div className="flex items-center gap-4 border-l border-[#2d303e] pl-6">
-                            {/* Notifications */}
                             <div className="relative" ref={notificationRef}>
                                 <button
                                     onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -290,13 +285,9 @@ const Dashboard = () => {
             </header>
 
             <main className="max-w-7xl mx-auto px-6 py-8">
-                {/* Stats Overview */}
                 <TaskStats tasks={tasks} />
 
-                {/* Filter Bar */}
                 <FilterBar filters={filters} setFilters={setFilters} />
-
-                {/* Task Grid */}
                 {isLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3].map(i => (

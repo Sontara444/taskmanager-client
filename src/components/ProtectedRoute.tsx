@@ -5,7 +5,7 @@ const ProtectedRoute = () => {
     const { user, loading } = useAuth();
 
     if (loading) {
-        return <div className="flex justify-center items-center h-screen">Loading...</div>; // Could be a Spinner
+        return <div className="flex justify-center items-center h-screen">Loading...</div>;
     }
 
     return user ? <Outlet /> : <Navigate to="/login" replace />;

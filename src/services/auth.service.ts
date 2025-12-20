@@ -1,7 +1,5 @@
 import api from './api';
 
-
-// Define types using Zod equivalent or interfaces
 export interface LoginData {
     email: string;
     password: string;

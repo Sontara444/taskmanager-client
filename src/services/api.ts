@@ -29,10 +29,9 @@ const request = async <T = any>(endpoint: string, options: FetchOptions = {}): P
     const config: RequestInit = {
         ...customConfig,
         headers: headers as HeadersInit,
-        credentials: 'include', // Same as withCredentials: true
+        credentials: 'include',
     };
 
-    // Add token to headers if it exists
     const token = localStorage.getItem('token');
     if (token) {
         (config.headers as any)['Authorization'] = `Bearer ${token}`;
@@ -44,10 +43,9 @@ const request = async <T = any>(endpoint: string, options: FetchOptions = {}): P
 
     try {
         const response = await fetch(url, config);
-        const responseData = await response.json().catch(() => ({})); // Handle empty or non-JSON responses
+        const responseData = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-            // mimic axios error object
             const error: any = new Error(responseData.message || response.statusText);
             error.response = {
                 data: responseData,
@@ -63,10 +61,8 @@ const request = async <T = any>(endpoint: string, options: FetchOptions = {}): P
             statusText: response.statusText,
         };
     } catch (error: any) {
-        // If it's already our custom error, rethrow
         if (error.response) throw error;
 
-        // Network errors or other fetch errors
         error.response = {
             data: { message: error.message || 'Network Error' },
             status: 500,

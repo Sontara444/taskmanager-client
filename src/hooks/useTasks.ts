@@ -34,30 +34,23 @@ export const useDeleteTask = () => {
     return useMutation({
         mutationFn: (id: string) => deleteTask(id),
         onMutate: async (id: string) => {
-            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
             await queryClient.cancelQueries({ queryKey: ['tasks'] });
 
-            // Snapshot the previous value
             const previousTasks = queryClient.getQueryData<Task[]>(['tasks']);
-
-            // Optimistically update to the new value
             if (previousTasks) {
                 queryClient.setQueryData<Task[]>(['tasks'], (old) =>
                     old ? old.filter((task) => task._id !== id) : []
                 );
             }
 
-            // Return a context object with the snapshotted value
             return { previousTasks };
         },
         onError: (_err, _newTodo, context) => {
-            // If the mutation fails, use the context returned from onMutate to roll back
             if (context?.previousTasks) {
                 queryClient.setQueryData(['tasks'], context.previousTasks);
             }
         },
         onSettled: () => {
-            // Always refetch after error or success:
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
         },
     });

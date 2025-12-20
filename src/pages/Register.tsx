@@ -40,9 +40,7 @@ const Register = () => {
 
     return (
         <div className="min-h-screen flex text-white" style={{ backgroundColor: '#0a0b14' }}>
-            {/* Left Side - Branding & Info */}
             <div className="hidden lg:flex w-1/2 relative overflow-hidden flex-col justify-center p-12" style={{ backgroundColor: '#12141c' }}>
-                {/* Background decorative elements */}
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,_rgba(99,102,241,0.15),_transparent_40%)] pointer-events-none"></div>
                 <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_80%,_rgba(168,85,247,0.15),_transparent_40%)] pointer-events-none"></div>
 
@@ -76,7 +74,6 @@ const Register = () => {
                 </div>
             </div>
 
-            {/* Right Side - Register Form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8" style={{ backgroundColor: '#0a0b14' }}>
                 <div className="w-full max-w-md space-y-8">
                     <div>

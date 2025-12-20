@@ -60,7 +60,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, taskTo
     }, [taskToEdit, setValue, reset, isOpen]);
 
     const handleFormSubmit = async (data: TaskFormData) => {
-        // Ensure enums are treated as the correct type
         const payload: any = { ...data };
         await onSubmit(payload);
         onClose();
@@ -104,7 +103,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, taskTo
                         />
                     </div>
 
-                    {/* Assign To */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-300">Assign To</label>
                         <select
