@@ -1,73 +1,64 @@
-# React + TypeScript + Vite
+# Collaborative Task Manager - Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend application for the Collaborative Task Manager, built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Dashboard**: Interactive task board with filtering and sorting.
+- **Real-time Updates**: Socket.io integration for instant task changes.
+- **Optimistic UI**: Immediate feedback for smooth user experience.
+- **Authentication**: Secure login/register flows.
+- **Responsive Design**: Mobile-friendly dark theme using Tailwind CSS.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React**: UI library.
+- **TypeScript**: Type safety.
+- **Vite**: Fast development server and bundler.
+- **Tailwind CSS**: Styling.
+- **React Query**: Server state management.
+- **Socket.io Client**: Real-time communication.
 
-## Expanding the ESLint configuration
+## 📦 Setup Instructions
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1.  **Install Dependencies**
+    ```bash
+    cd client
+    npm install
+    ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+2.  **Configuration**
+    - Create a `.env` file in the `client` directory:
+      ```env
+      VITE_BACKEND_URL=http://localhost:5000
+      ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+3.  **Run Locally**
+    ```bash
+    npm run dev
+    ```
+    - The app will run at `http://localhost:5173`.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🏗️ Architecture Overview
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The client is designed with a layered architecture to ensure separation of concerns:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Service Layer**: All API communication is abstracted in `src/services` (e.g., `task.service.ts`). This decouples the UI components from the implementation details of HTTP requests (e.g., `fetch` vs `axios`).
+- **Context API**: `AuthContext` manages the global user session state, checking for authentication via the `/auth/me` endpoint on initialization.
+- **Server State Management**: **React Query** (`@tanstack/react-query`) is used for fetching, caching, and synchronizing server data. It handles loading states, error states, and automatic background refetching.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🔌 Socket.io Integration
+
+Real-time functionality is key to the collaborative experience.
+
+1.  **Initialization**: The socket connection is established in `src/services/socket.ts` and connected in the `Dashboard` component.
+2.  **Event Listening**: The client listens for specific events:
+    - `task_created` / `task_updated` / `task_deleted`: Triggers a React Query invalidation (`queryClient.invalidateQueries(['tasks'])`), causing the task list to refresh automatically.
+    - `notification`: Displays real-time alerts when tasks are assigned.
+3.  **Room Joining**: On login, the client emits `socket.emit('join', userId)` to join a private room for targeted notifications.
+
+## ⚖️ Design Decisions & Trade-offs
+
+- **Optimistic Updates**: For critical actions like **Task Deletion**, we implemented optimistic updates. The UI removes the task *immediately* upon user click, without waiting for the server response. This makes the app feel instant. If the server request fails, the change is rolled back.
+  - *Trade-off*: In rare network failures, the item might reappear, but this is acceptable for the perceived performance gain.
+- **Polling vs Sockets**: We chose **Socket.io** over polling for "push" updates, ensuring changes are reflected instantly across all clients without hammering the server with frequent "check" requests.
